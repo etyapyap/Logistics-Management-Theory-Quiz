@@ -1,59 +1,357 @@
-<header>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>물류개론 퀴즈</title>
+  <style>
+    :root {
+      --bg-color: #ffffff;
+      --text-color: #000000;
+      --correct-color: green;
+      --incorrect-color: red;
+      --button-bg: #eeeeee;
+      --input-bg: #ffffff;
+    }
 
-<!--
-  <<< Author notes: Course header >>>
-  Include a 1280×640 image, course title in sentence case, and a concise description in emphasis.
-  In your repository settings: enable template repository, add your 1280×640 social image, auto delete head branches.
-  Add your open source license, GitHub uses MIT license.
--->
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #121212;
+        --text-color: #ffffff;
+        --correct-color: #66ff66;
+        --incorrect-color: #ff6666;
+        --button-bg: #1e1e1e;
+        --input-bg: #1c1c1c;
+      }
+    }
 
-# GitHub Pages
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      text-align: center;
+      padding: 1rem;
+      -webkit-text-size-adjust: none;
+    }
 
-_Create a site or blog from your GitHub repositories with GitHub Pages._
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
+    }
 
-</header>
+    .question-box {
+      margin-bottom: 2rem;
+    }
 
-<!--
-  <<< Author notes: Step 2 >>>
-  Start this step by acknowledging the previous step.
-  Define terms and link to docs.github.com.
-  Historic note: previous version checked for empty pull request, changed to the correct theme `minima`.
--->
+    #question {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+    }
 
-## Step 2: Configure your site
+    #answerInput {
+      font-size: 1rem;
+      padding: 0.6rem;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      margin: 0 auto;
+      box-sizing: border-box;
+      background-color: var(--input-bg);
+      color: var(--text-color);
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
 
-_You turned on GitHub Pages! :tada:_
+    #feedback {
+      font-size: 1rem;
+      margin-top: 1rem;
+    }
 
-We'll work in a branch, `my-pages`, that I created for you to get this site looking great. :sparkle:
+    .correct {
+      color: var(--correct-color);
+    }
 
-Jekyll uses a file titled `_config.yml` to store settings for your site, your theme, and reusable content like your site title and GitHub handle. You can check out the `_config.yml` file on the **Code** tab of your repository.
+    .incorrect {
+      color: var(--incorrect-color);
+    }
 
-We need to use a blog-ready theme. For this activity, we will use a theme named "minima".
+    #mode-buttons button {
+      display: block;
+      width: 100%;
+      max-width: 300px;
+      margin: 10px auto;
+      font-size: 1rem;
+      padding: 0.6rem;
+      background-color: var(--button-bg);
+      color: var(--text-color);
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
 
-### :keyboard: Activity: Configure your site
+    @media screen and (orientation: landscape) {
+      body {
+        padding: 2rem;
+      }
 
-1. Browse to the `_config.yml` file in the `my-pages` branch.
-1. In the upper right corner, open the file editor.
-1. Add a `theme:` set to **minima** so it shows in the `_config.yml` file as below:
-   ```yml
-   theme: minima
-   ```
-1. (optional) You can modify the other configuration variables such as `title:`, `author:`, and `description:` to further customize your site.
-1. Commit your changes.
-1. (optional) Create a pull request to view all the changes you'll make throughout this course. Click the **Pull Requests** tab, click **New pull request**, set `base: main` and `compare:my-pages`.
-1. Wait about 20 seconds then refresh this page (the one you're following instructions from). [GitHub Actions](https://docs.github.com/en/actions) will automatically update to the next step.
+      h1 {
+        font-size: 2rem;
+      }
 
-<footer>
+      #question {
+        font-size: 1.4rem;
+      }
 
-<!--
-  <<< Author notes: Footer >>>
-  Add a link to get support, GitHub status page, code of conduct, license link.
--->
+      #answerInput {
+        font-size: 1.2rem;
+      }
 
----
+      #feedback {
+        font-size: 1.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>물류개론 빈칸 퀴즈 <span id="score">(맞은 횟수: 0, 틀린 횟수: 0)</span></h1>
+  <div id="mode-buttons">
+    <button onclick="startQuiz('all')">전체 120문제</button>
+    <button onclick="startQuiz('random30')">랜덤 30문제</button>
+    <button onclick="startQuiz('random120')">랜덤 120문제</button>
+  </div>
 
-Get help: [Post in our discussion board](https://github.com/orgs/skills/discussions/categories/github-pages) &bull; [Review the GitHub status page](https://www.githubstatus.com/)
+  <div id="quiz-container" style="display:none;">
+    <div class="question-box">
+      <p id="question"></p>
+      <input type="text" id="answerInput" placeholder="정답을 입력하세요" autofocus>
+      <p id="feedback"></p>
+    </div>
+  </div>
 
-&copy; 2023 GitHub &bull; [Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/code_of_conduct.md) &bull; [MIT License](https://gh.io/mit)
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const allQuestions = [
+        { sentence: "1. ___시대는 경쟁자보다 조금이라도 우수한 제조기술과 혁신적인 아이디어로 만든 제품이 시장을 독차지할 수 있는 시대이다.", answer: "물류유통" },
+        { sentence: "2. 소량생산으로 생산원가 절감이 어려워졌고, 때마침 파렛트와 컨테이너를 이용한 ___가 진행되었다.", answer: "물류표준화" },
+        { sentence: "3. 기업들은 고객만족의 중요성이 깨닫기 시작하는 ___시장이 형성되기 시작하였다.", answer: "구매자" },
+        { sentence: "4. 원재료 조달부터 해외 생산과 국내 도입까지를 관리하는 제품을 시장에 적시 공급하여 고객만족도를 높이는 포괄적 기능인 ___에 주목하기 시작하였다.", answer: "로지스틱스" },
+        { sentence: "5. 다양한 소비자의 요구에 맞추기 위해 기업들이 고객 맞춤형 제품을 대량으로 생산하는 ___의 시대가 되었다.", answer: "다품종대량생산" },
+        { sentence: "6. ___시대는 원재료 공급부터 소비자 판매까지 모든 흐름을 통합 관리해야 했다.", answer: "공급망관리" },
+        { sentence: "7. ___은 물류를 판매 중에서도 제품을 소비자에게 운송하는 개별 기능으로 간주한다.", answer: "물류유통" },
+        { sentence: "8. ___는 군사용어인 ‘병참’이 전투를 제외한 모든 기능이다.", answer: "로지스틱스" },
+        { sentence: "9. 1990년대 이후 기업 내부와 외부를 포괄하는 ___의 개념으로 확대되었다.", answer: "공급망관리" },
+        { sentence: "10. 물류의 기본기능 중 ___은 생산자와 소비자의 거리차이를 좁혀준다.", answer: "운송기능" },
+        { sentence: "11. 물류의 기본기능 중 ___은 생산 시기와 소비 시기가 달라도 소비할 수 있게 해준다.", answer: "보관기능" },
+        { sentence: "12. 물류의 기본기능 중 ___은 수요와 공급의 격차가 발생할 때 가격 조정 역할을 할 뿐 아니라, 운송비용 절감으로 원가절감에도 기여한다.", answer: "운송과 보관기능" },
+        { sentence: "13. 물류의 기본기능 중 ___을 통해 생산자와 소비자가 유대관계를 구축할 수 있도록 연결해 주는 역할을 한다.", answer: "운송과 포장" },
+        { sentence: "14. 물류 활동별 기능 중 ___은 제품이나 상품을 효용가치가 낮은 장소에서 높은 장소로 이동시켜 효용가치를 높이는 활동이다.", answer: "운송" },
+        { sentence: "15. 물류 활동별 기능 중 ___은 제품이나 상품을 물리적으로 저장하는 활동이다.", answer: "보관" },
+        { sentence: "16. 물류 활동별 기능 중 ___은 운반수단에 화물을 싣고 내리는 작업, 보관시설에서 화물을 운반, 입고 등을 하는 활동이다.", answer: "하역" },
+        { sentence: "17. 물류 활동별 기능 중 ___은 제품이나 상품의 유통과정에서 이루어지는 단순 가공, 재포장, 조립, 절단 등의 물류 활동을 말한다.", answer: "유통가공" },
+        { sentence: "18. 물류 활동별 기능 중 ___은 운송, 보관, 포장, 하역 기능을 물류활동 관련 정보로 연결함으로써 전체 물류관리를 효율적으로 수행하게 해준다.", answer: "물류정보" },
+        { sentence: "19. 물류의 영역별로 구분할 때 ___는 제조업의 원재료를 조달처로부터 운송하고, 보관 창고에 입고하여 생산공정에 투입되기 직전까지의 물류 활동이다.", answer: "조달물류" },
+        { sentence: "20. 물류의 영역별로 구분할 때 ___는 원재료가 보관창고에서 출고되어 생산공정에 투입되는 시점부터, 제품이 생산되고 포장되어 나올 때까지의 물류활동이다.", answer: "생산물류" },
+        { sentence: "21. 물류의 영역별로 구분할 때 ___는 생산업체에서 생산된 제품이 출하되어 판매창고에 입고될 때까지의 물류활동이다.", answer: "사내물류" },
+        { sentence: "22. 물류의 영역별로 구분할 때 ___는 생산된 완제품 또는 매입한 상품을 판매 창고에 입고한 후, 소비자에게 전달하는 물류활동이다.", answer: "판매물류" },
+        { sentence: "23. 물류의 영역별로 구분할 때 ___는 반품물류, 회수물류, 폐기물류를 말한다.", answer: "역물류" },
+        { sentence: "24. 물류관리의 목표는 효율성 제고, 원활한 의사소통, ___ 등이 있다.", answer: "물류비용 절감" },
+        { sentence: "25. 물류관리의 3S1L은 물류를 신속하고, 저렴하고, 안전하고, ___ 거래 상대방에게 전달해야 한다는 원칙이다.", answer: "확실하게" },
+        { sentence: "26. ___은 생산과 소비를 연결하여 공간과 시간의 효용을 창출하는 시스템이다.", answer: "물류시스템" },
+        { sentence: "27. ___은 생산된 완제품 또는 매입한 상품을 판매 창고에 입고한 후, 소비자에게 전달하는 물류 활동이다.", answer: "판매물류" },
+        { sentence: "28. 로지스틱스 시대에 기업의 물류 전체를 최적화하려는 노력에 맞춰 파렛트와 컨테이너에 의한 재적재 없는 ___이 일반화되었다.", answer: "일관운송" },
+        { sentence: "29. 공급망 관리 시대에 여러 기업이 표준 파렛트와 컨테이너 운송에 참여하면서, 여러 기업의 물류를 공동으로 수행하는 ___의 기회가 많아졌다.", answer: "공동물류" },
+        { sentence: "30. ___은 원재료 조달부터 소비자 배송에 이르는 물류시스템의 전체 활동을 체계화하여 전체 최적화를 달성해 나가는 과정을 말한다.", answer: "물류합리화" },
+        { sentence: "31. ___는 물류기기와 시설, 장비의 규격이나 치수를 배수 또는 분할 관계로 만들어 물류표준화를 지원하는 활동이다.", answer: "물류모듈화" },
+        { sentence: "32. ___은 여러 개의 물품을 물류장비로 취급할 수 있도록 하나로 합친 화물이다.", answer: "단위화물" },
+        { sentence: "33. ___는 단위화물로 전환함으로써 운송, 보관, 하역, 포장을 재적입이나 재취급 없이 한 번에 처리하여 효율성을 제고하는 기법이다.", answer: "단위화물 체계" },
+        { sentence: "34. ___는 단위화물 체계를 구성하는 핵심 장비이다.", answer: "파렛트" },
+        { sentence: "35. 재적재 없이 출발지에서 도착지까지 운송하는 개념을 ___라고 한다.", answer: "일관 파렛트화" },
+        { sentence: "36. ___는 출발지에서 도착지까지 전체 운송 과정에서 화물을 파렛트에 적재된 상태 그대로 일관되게 운송하는 형태를 말한다.", answer: "일관 파렛트화" },
+        { sentence: "37. ___는 파렛트의 규격을 표준화하여 공동으로 사용함으로써 물류효율성을 높이는 파렛트 운영 기법이다.", answer: "파렛트 풀 시스템" },
+        { sentence: "38. ___는 화물이 컨테이너에 적재된 상태 그대로 운송과 보관이 이루어지는 일관운송 체계를 말한다.", answer: "컨테이너화" },
+        { sentence: "39. ___는 물류활동에 필요한 인프라를 복수의 파트너와 함께 연계하여 운영하는 물류합리화 방식을 말한다.", answer: "물류공동화" },
+        { sentence: "40. ___는 자사의 물류시스템과 외부 물류시스템의 연계가 필요하다.", answer: "물류공동화" },
+        { sentence: "41. 물류공동화의 운영방식 중 ___는 동종 제조업체 또는 도매업체 간 수평적으로 물류를 처리하는 형태이다.", answer: "수평적 공동화" },
+        { sentence: "42. 물류공동화의 운영방식 중 ___는 제조업체-판매회사-도매업체 간 수직적 관계에서 추진되는 공동화이다.", answer: "수직적 공동화" },
+        { sentence: "43. 물류공동화의 운영방식 중 ___는 복수의 물류기업이 제휴하여 혼적 운송 또는 멀티모달 운송을 하는 형태이다.", answer: "물류기업 동업자 공동화" },
+        { sentence: "44. 물류공동화의 운영방식 중 ___는 물류업체가 화주의 협력업체나 파트너가 되는 형태이다.", answer: "화주와 물류업체 간 파트너십" },
+        { sentence: "45. 물류공동화의 장점은 물류비용 절감, 수배송 효율 향상, 물류생산성 향상, ___이다.", answer: "물류서비스 안정화" },
+        { sentence: "46. 물류공동화의 단점은 ___, 배송 순서 조절 어려움, 기업비밀 유출 우려 등이 있다.", answer: "물류서비스 차별화 한계" },
+        { sentence: "47. ___는 복수의 운송업체 또는 화주가 공동으로 수배송하는 물류공동화의 한 형태이다.", answer: "수배송공동화" },
+        { sentence: "48. 수배송 공동화의 목적은 다빈도 소량 배송, 수배송 효율 향상, ___ 등이다.", answer: "물류비용 절감" },
+        { sentence: "49. 수배송 공동화의 운영방식 중 ___는 집화와 배송을 공동으로 수행하는 형태이다.", answer: "집배송공동화" },
+        { sentence: "50. 수배송 공동화의 운영방식 중 ___는 복수의 운송업자가 복수 화주의 화물을 공동으로 배송하는 형태이다.", answer: "배송공동화" },
+        { sentence: "51. 수배송 공동화의 운영방식 중 ___는 특정 노선의 집하를 공동화하여 화주가 지정된 노선의 운송업자에게 화물을 맡기면 운송업자가 배송하는 형태이다.", answer: "노선집하공동화" },
+        { sentence: "52. ___는 물류업체가 복수 화주기업을 대신하여 주문 피킹, 포장, 배송을 대행하는 물류합리화 형태이다.", answer: "풀필먼트" },
+        { sentence: "53. 풀필먼트의 기대효과는 물류비용 절감, ___, 핵심역량 집중이다.", answer: "주문 리드타임 개선" },
+        { sentence: "54. ___은 제품 주문일과 도착일 사이의 시간이다.", answer: "주문 리드타임" },
+        { sentence: "55. ___는 기업의 모든 부문을 연결하고 통합 관리하며 정보를 공유하는 시스템이다.", answer: "ERP" },
+        { sentence: "56. ___는 필요한 때, 필요한 물건을, 필요한 만큼 생산함으로써 재고를 최소화하는 시스템이다.", answer: "JIT" },
+        { sentence: "57. 마케팅의 4P는 제품, 가격, 촉진, ___이다.", answer: "장소" },
+        { sentence: "58. ___은 재화가 생산자에서 소비자에게 전달되기까지 거치는 과정을 말한다.", answer: "유통" },
+        { sentence: "59. 유통경로는 물류와 비슷하게 ___과 ___의 효용을 가진다.", answer: "시간, 장소" },
+        { sentence: "60. ___는 유통경로 구성원 간의 이해관계를 본부나 중앙에서 정한 계획에 따라 전문적으로 관리 통제한다.", answer: "수직적 유통경로" },
+        { sentence: "61. ___는 유통경로 중 동일 단계에서 활동하는 복수의 기업이 결합한 형태이다.", answer: "수평적 유통경로" },
+        { sentence: "62. ___은 과거의 이력 자료나 데이터가 충분하지 않을 때 개인의 통찰이나 경험을 바탕으로 한 수요예측 기법이다.", answer: "정성적 수요예측 기법" },
+        { sentence: "63. 정량적 수요예측 기법 중 ___은 과거 일정 구간의 평균치를 미래의 예측치로 계산하는 기법이다.", answer: "이동평균법" },
+        { sentence: "64. 정량적 수요예측 기법 중 ___은 과거의 예측치와 예측오차의 일정 비율을 더한 값을 미래의 수요예측치로 보는 기법이다.", answer: "지수 평활법" },
+        { sentence: "65. ___은 주문, 판매, 서비스, 대금결제 등이 인터넷 등 온라인으로 이루어지는 판매 형태를 말한다.", answer: "전자상거래" },
+        { sentence: "66. ___은 소비자가 다양한 채널을 넘나들며 구매할 수 있도록 하여 하나의 매장을 이용하는 것과 동일한 고객 경험을 제공하는 서비스이다.", answer: "옴니채널" },
+        { sentence: "67. ___는 제품 다양화 속에서 고객서비스 수준 유지와 비용 절감을 위해 창고를 관리하는 시스템이다.", answer: "WMS" },
+        { sentence: "68. 물류정보는 ___를 효율적으로 수행하기 위해 운송, 보관, 하역, 포장 등 활동 중 축적되고 조합되어 정리된 자료이다.", answer: "물류관리" },
+        { sentence: "69. 물류정보시스템에서 ___는 운영 시스템 데이터를 바탕으로 수요예측, 자재소요, 생산, 판매 등을 계획하는 시스템이다.", answer: "공급망 계획 시스템" },
+        { sentence: "70. 물류정보시스템에서 ___는 운영 시스템 데이터를 바탕으로 주문처리, 입출고, 수송, 배송 등을 처리하는 시스템이다.", answer: "공급망 실행 시스템" },
+        { sentence: "71. ___는 각종 문서를 전자문서로 변환하여 시스템 간 주고 받는 전자문서교환 시스템이다.", answer: "EDI" },
+        { sentence: "72. ___는 복수의 디바이스가 네트워크와 연결되어 사람 없이 데이터를 주고받을 수 있는 시스템 구조를 말한다.", answer: "사물인터넷" },
+        { sentence: "73. ___는 두 소프트웨어의 구성요소가 서로 통신할 수 있게 하는 기능이다.", answer: "API" },
+        { sentence: "74. ___는 화물차 운행을 최적화하고 관리를 효율화하는 시스템이다.", answer: "첨단화물운송시스템" },
+        { sentence: "75. ___는 무역항을 대상으로 선박 입출항, 항만시설 사용, 관세 납부 등을 처리하는 시스템이다.", answer: "해운항만 물류정보시스템" },
+        { sentence: "76. ___는 실시간 판매 상품 정보, 구매 고객 정보, 대금 지급 정보를 재고관리 등에 활용하는 시스템이다.", answer: "POS" },
+        { sentence: "77. ___는 재고가 일정 수준에 도달하면 자동으로 필요한 만큼 발주하는 시스템이다.", answer: "자동발주시스템" },
+        { sentence: "78. ___는 물류센터에 점등 장치를 달아 피킹할 화물이 있는 위치와 수량을 알려주는 시스템이다.", answer: "DPS" },
+        { sentence: "79. ___는 피킹한 상품을 포장장소에 두고 출고지별 상자에 정확한 수량을 담을 수 있도록 지시해주는 시스템이다.", answer: "DAS" },
+        { sentence: "80. ___는 부피가 작은 제품을 점포나 카테고리별로 분류하는 시스템이다.", answer: "PAS" },
+        { sentence: "81. ___는 컴퓨터가 판독할 수 있도록 굵기 다른 흑색 선과 공간으로 정보를 표현한 코드이다.", answer: "바코드" },
+        { sentence: "82. RFID는 판독기와 접촉 없이 태그 정보를 읽는 ___ 기술이다.", answer: "무선주파수인식기술" },
+        { sentence: "83. ___는 화주가 고객에게 직접 재화를 전달하는 형태로, 소규모 기업이 이용한다.", answer: "1PL" },
+        { sentence: "84. ___는 모기업이 출자한 자회사가 물류업무를 수행하거나 계열사 물류를 담당한다.", answer: "2PL" },
+        { sentence: "85. ___는 화주의 고객사와 화주 사이에서 운송, 보관, 주문처리, 재고관리 등 물류 프로세스를 대부분 수행한다.", answer: "3PL" },
+        { sentence: "86. ___는 3자물류업체가 컨설팅, 공급망 설계 및 최적화를 수행하는 형태이다.", answer: "4PL" },
+        { sentence: "87. ___는 더 많은 재고를 확보하려고 하면서 공급망의 변동성이 커지는 현상이다.", answer: "채찍효과" },
+        { sentence: "88. ___는 정보 공유를 통해 정확한 수량의 상품을 적절한 시점과 장소에 공급하는 방식이다.", answer: "신속대응" },
+        { sentence: "89. ___는 창고 보관 없이 하나의 운송수단에서 다른 운송수단으로 바로 실물 인도하는 방식이다.", answer: "크로스 도킹" },
+        { sentence: "90. ___는 판매 시점 정보를 기반으로 자동으로 공급업체에 발주하는 시스템으로 일본에서 발달하였다.", answer: "EOS" },
+        { sentence: "91. ___는 고객의 특별한 요구를 반영한 재화와 서비스를 낮은 원가에 대량 생산하여 제공하는 프로세스이다.", answer: "대량 고객화" },
+        { sentence: "92. ___는 매장의 실시간 판매 및 재고 상황과 수요예측 기반으로 자동 보충 주문을 발행하는 시스템이다.", answer: "자동보충주문시스템" },
+        { sentence: "93. ___은 물품의 수송, 보관, 취급 등을 위해 그것의 가치 및 상태를 보호하기 위한 방법 또는 상태를 말한다.", answer: "포장" },
+        { sentence: "94. 한국산업표준 KST1001의 포장 분류는 ___, ___, ___이다.", answer: "낱포장, 속포장, 겉포장" },
+        { sentence: "95. ___은 물품의 수송과 보관을 주요 목적으로 하는 모든 포장을 말한다.", answer: "공급포장" },
+        { sentence: "96. ___은 상거래에서 상품을 진열하거나 취급하는 데 편의를 주기 위한 포장이다.", answer: "상업포장" },
+        { sentence: "97. 포장 표준화의 종류는 ___, ___, ___, ___이다.", answer: "사내 표준화, 업계 표준화, 국가 표준화, 국제 표준화" },
+        { sentence: "98. ___은 환경오염과 온실가스 발생을 최소화하는 친환경적 물류 활동이다.", answer: "녹색 물류" },
+        { sentence: "99. 운송은 교통수단을 이용하여 ___ 효용을 창출하기 위한 행위이다.", answer: "장소적" },
+        { sentence: "100. 운송은 물류활동 중 가장 큰 비중을 차지하며, ___과 고객서비스 향상에 초점을 둔다.", answer: "비용절감" },
+        { sentence: "101. 수송은 선박, 철도, 트럭 등을 이용한 거점 간의 ___이다.", answer: "간선운송" },
+        { sentence: "102. 배송은 거점에서 수화인에게 전달하는 ___이다.", answer: "지선운송" },
+        { sentence: "103. 운송의 3대 요소 중 ___은 화물 운송의 중계 및 환적이 이루어지는 장소이다.", answer: "운송 연결점" },
+        { sentence: "104. 운송의 3대 요소 중 ___은 도로, 철도, 해상로 등 운송수단이 이용하는 통로이다.", answer: "운송 경로" },
+        { sentence: "105. 운송의 3대 요소 중 ___은 사람과 재화를 싣고 운행하는 수단이다.", answer: "운송 수단" },
+        { sentence: "106. ___는 도로 중심의 운송체계에서 철도 및 연안운송으로 수단을 전환하는 것을 말한다.", answer: "Modal Shift" },
+        { sentence: "107. ___은 자국 항만, 공항 또는 물류터미널까지의 운송이다.", answer: "국내운송" },
+        { sentence: "108. ___은 수출지 도착항에서 최종 고객에게 화물이 인도되기까지의 운송이다.", answer: "해외현지운송" },
+        { sentence: "109. FCL운송은 만재 컨테이너 운송이고, LCL운송은 ___을 의미한다.", answer: "소량화물운송" },
+        { sentence: "110. 화물자동차 운송의 특징은 단거리 ___, 장거리 운임 비쌈, 중량 제한 등이다.", answer: "문전운송" },
+        { sentence: "111. 철도운송은 대량화물의 중장거리 ___에 적합하다.", answer: "간선운송" },
+        { sentence: "112. ___은 택배업 또는 서류송달업을 의미한다.", answer: "소화물일관운송" },
+        { sentence: "113. ___은 기업과 국가 모두에게 물류비 절감 및 경쟁력 확보를 위해 중요하다.", answer: "운송합리화" },
+        { sentence: "114. ___은 냉장, 냉동식품 등을 저온 상태로 생산부터 소비까지 유통시키는 구조이다.", answer: "콜드체인 시스템" },
+        { sentence: "115. ___은 유상으로 화물을 운송하는 사업이다.", answer: "화물자동차 운송사업" },
+        { sentence: "116. ___은 운송계약을 중개하거나 자기 명의로 운송하는 사업이다.", answer: "화물자동차 운송주선사업" },
+        { sentence: "117. ___은 자기 또는 소속 가맹점의 차량을 이용해 유상으로 화물을 운송하는 사업이다.", answer: "화물자동차 운송가맹사업" },
+        { sentence: "118. ___은 집화, 하역, 보관, 분류, 통관 등의 기능을 수행하는 시설이다.", answer: "물류터미널" },
+        { sentence: "119. ___은 2가지 이상의 운송수단 간 연계운송이 가능한 물류터미널이다.", answer: "복합물류터미널" },
+        { sentence: "120. 물류터미널 사업은 ___과 ___으로 구분된다.", answer: "복합물류터미널사업, 일반물류터미널사업" }
+      ];
 
-</footer>
+      let quiz = [];
+      let index = 0;
+      let timeoutId = null;
+      let correctCount = 0;
+      let incorrectCount = 0;
+
+      function startQuiz(mode) {
+        index = 0;
+        correctCount = 0;
+        incorrectCount = 0;
+        updateScore();
+
+        if (mode === 'random30') {
+          quiz = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 30);
+        } else if (mode === 'random120') {
+          quiz = [...allQuestions].sort(() => Math.random() - 0.5);
+        } else {
+          quiz = [...allQuestions];
+        }
+
+        document.getElementById("mode-buttons").style.display = 'none';
+        document.getElementById("quiz-container").style.display = 'block';
+        resetInputListener();
+        showQuestion();
+      }
+
+      function resetInputListener() {
+        const input = document.getElementById("answerInput");
+        input.value = '';
+        input.disabled = false;
+        input.removeEventListener("keydown", handleInput);
+        input.addEventListener("keydown", handleInput);
+      }
+
+      function handleInput(e) {
+        if (e.key === "Enter") {
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+          }
+          const userInput = e.target.value.replace(/\s+/g, '').toLowerCase();
+          const correctAnswer = quiz[index].answer.replace(/\s+/g, '').toLowerCase();
+          const correct = userInput === correctAnswer;
+          showAnswer(correct);
+        }
+      }
+
+      function showQuestion() {
+        const input = document.getElementById("answerInput");
+        input.value = '';
+        input.disabled = false;
+        input.focus();
+        document.getElementById("question").textContent = quiz[index].sentence;
+        document.getElementById("feedback").textContent = '';
+        document.getElementById("feedback").className = '';
+      }
+
+      function showAnswer(correct) {
+        const answer = quiz[index].answer;
+        const feedback = document.getElementById("feedback");
+        if (correct) {
+          correctCount++;
+          feedback.textContent = `정답입니다! (${answer})`;
+          feedback.className = 'correct';
+          timeoutId = setTimeout(nextQuestion, 1500); // 정답일 경우 1.5초 딜레이
+        } else {
+          incorrectCount++;
+          feedback.textContent = `오답입니다. 정답은 (${answer}) 입니다.`;
+          feedback.className = 'incorrect';
+          timeoutId = setTimeout(nextQuestion, 2000); // 오답일 경우 2초 딜레이
+        }
+        updateScore();
+        document.getElementById("answerInput").disabled = true;
+      }
+
+      function nextQuestion() {
+        index++;
+        if (index < quiz.length) {
+          showQuestion();
+        } else {
+          endQuiz();
+        }
+      }
+
+      function endQuiz() {
+        document.getElementById("question").textContent = "퀴즈 종료! 수고했어요 👏";
+        document.getElementById("answerInput").style.display = 'none';
+        document.getElementById("feedback").textContent = '';
+        document.getElementById("mode-buttons").style.display = 'block';
+      }
+
+      function updateScore() {
+        document.getElementById("score").textContent = `(맞은 횟수: ${correctCount}, 틀린 횟수: ${incorrectCount})`;
+      }
+
+      window.startQuiz = startQuiz;
+    });
+  </script>
+</body>
+</html>
+
